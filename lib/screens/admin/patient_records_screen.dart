@@ -12,70 +12,25 @@ class PatientRecordsScreen extends StatefulWidget {
   State<PatientRecordsScreen> createState() => _PatientRecordsScreenAdminState();
 }
 
-class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
-    with TickerProviderStateMixin {
+class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen> {
   List<Map<String, String>> _allPatients = [];
   List<Map<String, String>> _filteredPatients = [];
   String? _selectedPatientId;
   String? _selectedPatientName;
   Map<String, TextEditingController> _controllers = {};
-  TextEditingController _searchController = TextEditingController();
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late AnimationController _pulseController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _pulseAnimation;
+  final TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
   Timer? _debounce;
 
-  // Enhanced color scheme with gradients
-  final Color primaryColor = const Color(0xFF2E7D5B); // Deep forest green
-  final Color accentColor = const Color(0xFF4CAF50); // Bright green
-  final Color backgroundColor = const Color(0xFFF8FFFE); // Very light mint
-  final Color cardColor = Colors.white;
-  final Color textPrimary = const Color(0xFF1A1A1A);
-  final Color textSecondary = const Color(0xFF666666);
-  final Color successColor = const Color(0xFF10B981);
-  final Color warningColor = const Color(0xFFFFB020);
-  final Color errorColor = const Color(0xFFEF4444);
-
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
     _fetchPatients();
     _searchController.addListener(() {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _debounce = Timer(const Duration(milliseconds: 300), _filterPatients);
     });
-  }
-
-  void _initializeAnimations() {
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
-
-    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
   }
 
   @override
@@ -84,9 +39,6 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
       controller.dispose();
     }
     _searchController.dispose();
-    _fadeController.dispose();
-    _slideController.dispose();
-    _pulseController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -111,9 +63,6 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
         _filteredPatients = List.from(_allPatients);
         _isLoading = false;
       });
-
-      _fadeController.forward();
-      _slideController.forward();
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to fetch patients: $e';
@@ -159,13 +108,8 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
         'bloodGroup': TextEditingController(),
       };
     });
-    _slideController.reset();
-    _slideController.forward();
     _loadPatientData(id);
-
   }
-
-
 
   void _clearSearch() {
     _searchController.clear();
@@ -175,310 +119,110 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
     });
   }
 
-  Widget _buildAnimatedSearchSection() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: Container(
-          margin: const EdgeInsets.all(20),
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                primaryColor.withOpacity(0.05),
-                accentColor.withOpacity(0.08),
-                Colors.white,
-              ],
-              stops: const [0.0, 0.3, 1.0],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withOpacity(0.12),
-                blurRadius: 30,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(0.8),
-                blurRadius: 20,
-                offset: const Offset(-5, -5),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildSearchSection() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _pulseAnimation.value,
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [primaryColor, accentColor],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: primaryColor.withOpacity(0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(Icons.search_rounded, color: Colors.white, size: 28),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Patient Search',
-                          style: GoogleFonts.inter(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            color: textPrimary,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Find and manage patient records',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: textSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-              _buildAnimatedSearchField(),
-              const SizedBox(height: 24),
-              if (_filteredPatients.isNotEmpty)
-                _buildAnimatedDropdown()
-              else if (_searchController.text.isNotEmpty)
-                _buildNoResultsWidget(),
-              if (_filteredPatients.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(top: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: accentColor.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: accentColor, size: 20),
-                      const SizedBox(width: 12),
-                      Text(
-                        '${_filteredPatients.length} patient(s) found',
-                        style: GoogleFonts.inter(
-                          color: accentColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Patient search',
+                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    ),
+                    Text(
+                      'Find and view patient records',
+                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search by patient name...',
+              prefixIcon: const Icon(Icons.person_search_rounded, size: 20),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 18),
+                      onPressed: _clearSearch,
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (_filteredPatients.isNotEmpty)
+            _buildPatientDropdown()
+          else if (_searchController.text.isNotEmpty)
+            _buildNoResultsWidget(),
+          if (_filteredPatients.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                '${_filteredPatients.length} patient(s) found',
+                style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildAnimatedSearchField() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Search by patient name...',
-          hintStyle: GoogleFonts.inter(color: textSecondary.withOpacity(0.7), fontSize: 16),
-          prefixIcon: Container(
-            padding: const EdgeInsets.all(14),
-            child: Icon(Icons.person_search_rounded, color: primaryColor, size: 24),
-          ),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: textSecondary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(Icons.clear_rounded, color: textSecondary, size: 18),
-            ),
-            onPressed: _clearSearch,
-          )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: primaryColor, width: 2.5),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
-          ),
-          filled: true,
-          fillColor: backgroundColor,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        ),
-        style: GoogleFonts.inter(fontSize: 16, color: textPrimary, fontWeight: FontWeight.w500),
-      ),
-    );
-  }
-
-  Widget _buildAnimatedDropdown() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: primaryColor.withOpacity(0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: DropdownButtonFormField<String>(
-          value: _selectedPatientId,
-          hint: Text(
-            'Select Patient',
-            style: GoogleFonts.inter(color: textSecondary, fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          items: _filteredPatients.map((patient) {
-            return DropdownMenuItem(
-              value: patient['id'],
-              child: Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: accentColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      patient['name']!,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        color: textPrimary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-          onChanged: _selectPatient,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: primaryColor, width: 2.5),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
-            ),
-            labelText: 'Patient',
-            labelStyle: GoogleFonts.inter(
-              color: primaryColor,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-            filled: true,
-            fillColor: backgroundColor,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          ),
-          isExpanded: true,
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: primaryColor, size: 28),
-          dropdownColor: Colors.white,
-          style: GoogleFonts.inter(color: textPrimary),
-        ),
-      ),
+  Widget _buildPatientDropdown() {
+    return DropdownButtonFormField<String>(
+      initialValue: _selectedPatientId,
+      decoration: const InputDecoration(labelText: 'Patient'),
+      hint: const Text('Select patient'),
+      items: _filteredPatients.map((patient) {
+        return DropdownMenuItem(value: patient['id'], child: Text(patient['name']!));
+      }).toList(),
+      onChanged: _selectPatient,
+      isExpanded: true,
     );
   }
 
   Widget _buildNoResultsWidget() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(24),
+    return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [warningColor.withOpacity(0.08), warningColor.withOpacity(0.15)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: warningColor.withOpacity(0.3)),
+        color: AppColors.warning.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: warningColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.search_off_rounded, color: warningColor, size: 24),
-          ),
-          const SizedBox(width: 16),
+          const Icon(Icons.search_off_rounded, color: AppColors.warning, size: 22),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'No Results Found',
-                  style: GoogleFonts.inter(
-                    color: warningColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'No patients match "${_searchController.text}"',
-                  style: GoogleFonts.inter(
-                    color: warningColor.withOpacity(0.8),
-                    fontSize: 14,
-                  ),
-                ),
+                Text('No results found', style: GoogleFonts.inter(color: AppColors.warning, fontSize: 14, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text('No patients match "${_searchController.text}"', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
               ],
             ),
           ),
@@ -487,52 +231,24 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
     );
   }
 
-  Widget _buildAnimatedPatientRecord(Map<String, dynamic> data) {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Container(
-          margin: const EdgeInsets.all(20),
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withOpacity(0.15),
-                blurRadius: 40,
-                offset: const Offset(0, 12),
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(0.8),
-                blurRadius: 20,
-                offset: const Offset(-8, -8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildPatientHeader(),
-              const SizedBox(height: 28),
-              Container(
-                height: 1,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      primaryColor.withOpacity(0.3),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 28),
-              _buildMedicalRecordsForm(data),
-            ],
-          ),
-        ),
+  Widget _buildPatientRecord() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPatientHeader(),
+          const SizedBox(height: 20),
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: 20),
+          _buildMedicalRecordsForm(),
+        ],
       ),
     );
   }
@@ -540,61 +256,27 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
   Widget _buildPatientHeader() {
     return Row(
       children: [
-        Hero(
-          tag: 'patient-avatar-$_selectedPatientId',
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [primaryColor, accentColor],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: primaryColor.withOpacity(0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.person_rounded, color: Colors.white, size: 32),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
           ),
+          child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 26),
         ),
-        const SizedBox(width: 24),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 _selectedPatientName ?? 'Unknown Patient',
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: textPrimary,
-                  letterSpacing: -0.5,
-                ),
+                style: GoogleFonts.inter(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [primaryColor.withOpacity(0.1), accentColor.withOpacity(0.1)],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: primaryColor.withOpacity(0.2)),
-                ),
-                child: Text(
-                  'Medical Records',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: primaryColor,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+              const SizedBox(height: 4),
+              Text(
+                'Medical records',
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -603,69 +285,59 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
     );
   }
 
-  Widget _buildMedicalRecordsForm(Map<String, dynamic> data) {
-    return Form(
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildRecordCard(
-                  controller: _controllers['bloodGroup']!,
-                  label: 'Blood Group',
-                  icon: Icons.bloodtype_rounded,
-                  color: const Color(0xFFDC2626),
-                  hint: 'A+, B-, O+, AB-',
-                ),
+  Widget _buildMedicalRecordsForm() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildRecordCard(
+                controller: _controllers['bloodGroup']!,
+                label: 'Blood group',
+                icon: Icons.bloodtype_rounded,
+                color: AppColors.error,
+                hint: 'A+, B-, O+, AB-',
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildRecordCard(
-                  controller: _controllers['height']!,
-                  label: 'Height (cm)',
-                  icon: Icons.height_rounded,
-                  color: const Color(0xFF2563EB),
-                  hint: '175',
-                ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildRecordCard(
+                controller: _controllers['height']!,
+                label: 'Height (cm)',
+                icon: Icons.height_rounded,
+                color: AppColors.secondary,
+                hint: '175',
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildRecordCard(
-                  controller: _controllers['weight']!,
-                  label: 'Weight (kg)',
-                  icon: Icons.monitor_weight_rounded,
-                  color: successColor,
-                  hint: '70',
-                ),
-              ),
-              const Expanded(child: SizedBox()),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildFullWidthRecordCard(
-            controller: _controllers['allergies']!,
-            label: 'Allergies',
-            icon: Icons.warning_amber_rounded,
-            color: warningColor,
-            hint: 'List known allergies...',
-            maxLines: 3,
-          ),
-          const SizedBox(height: 16),
-          _buildFullWidthRecordCard(
-            controller: _controllers['medicalConditions']!,
-            label: 'Medical Conditions',
-            icon: Icons.medical_information_rounded,
-            color: const Color(0xFF7C3AED),
-            hint: 'List current medical conditions...',
-            maxLines: 4,
-          ),
-          const SizedBox(height: 36),
-        ],
-      ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildRecordCard(
+          controller: _controllers['weight']!,
+          label: 'Weight (kg)',
+          icon: Icons.monitor_weight_rounded,
+          color: AppColors.success,
+          hint: '70',
+        ),
+        const SizedBox(height: 16),
+        _buildRecordCard(
+          controller: _controllers['allergies']!,
+          label: 'Allergies',
+          icon: Icons.warning_amber_rounded,
+          color: AppColors.warning,
+          hint: 'List known allergies...',
+          maxLines: 3,
+        ),
+        const SizedBox(height: 16),
+        _buildRecordCard(
+          controller: _controllers['medicalConditions']!,
+          label: 'Medical conditions',
+          icon: Icons.medical_information_rounded,
+          color: const Color(0xFF7C3AED),
+          hint: 'List current medical conditions...',
+          maxLines: 4,
+        ),
+      ],
     );
   }
 
@@ -678,161 +350,39 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
     int maxLines = 1,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.08), color.withOpacity(0.12)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    color: textSecondary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: controller,
-            maxLines: maxLines,
-            readOnly: true,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: GoogleFonts.inter(
-                color: textSecondary.withOpacity(0.6),
-                fontSize: 16,
-              ),
-              border: InputBorder.none,
-              filled: true,
-              fillColor: Colors.transparent,
-            ),
-            style: GoogleFonts.inter(
-              color: textSecondary,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFullWidthRecordCard({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required Color color,
-    String? hint,
-    int maxLines = 1,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.08), color.withOpacity(0.12)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(width: 16),
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: 10),
               Text(
                 label,
-                style: GoogleFonts.inter(
-                  color: textSecondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
+                style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.3),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 10),
           TextFormField(
             controller: controller,
             maxLines: maxLines,
             readOnly: true,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.inter(
-                color: textSecondary.withOpacity(0.6),
-                fontSize: 16,
-              ),
               border: InputBorder.none,
-              filled: true,
-              fillColor: Colors.transparent,
+              filled: false,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
             ),
-            style: GoogleFonts.inter(
-              color: textSecondary,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -841,10 +391,7 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
 
   void _loadPatientData(String patientId) async {
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection(Collections.users)
-          .doc(patientId)
-          .get();
+      final doc = await FirebaseFirestore.instance.collection(Collections.users).doc(patientId).get();
 
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
@@ -866,32 +413,17 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
       SnackBar(
         content: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: errorColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.error_rounded, color: errorColor, size: 20),
-            ),
+            const Icon(Icons.error_rounded, color: Colors.white, size: 20),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                message,
-                style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: Text(message, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
             ),
           ],
         ),
-        backgroundColor: errorColor,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -900,53 +432,29 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
     if (_errorMessage == null) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [errorColor.withOpacity(0.1), errorColor.withOpacity(0.15)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: errorColor.withOpacity(0.3)),
+        color: AppColors.error.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.error.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: errorColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.error_outline_rounded, color: errorColor, size: 24),
-          ),
-          const SizedBox(width: 16),
+          const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 22),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Error',
-                  style: GoogleFonts.inter(
-                    color: errorColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _errorMessage!,
-                  style: GoogleFonts.inter(
-                    color: errorColor.withOpacity(0.8),
-                    fontSize: 14,
-                  ),
-                ),
+                Text('Error', style: GoogleFonts.inter(color: AppColors.error, fontSize: 14, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(_errorMessage!, style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
               ],
             ),
           ),
           IconButton(
-            icon: Icon(Icons.close_rounded, color: errorColor),
+            icon: const Icon(Icons.close_rounded, color: AppColors.error, size: 20),
             onPressed: () => setState(() => _errorMessage = null),
           ),
         ],
@@ -954,66 +462,14 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
     );
   }
 
-  Widget _buildLoadingWidget() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [primaryColor.withOpacity(0.1), accentColor.withOpacity(0.1)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
-                valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Loading patients...',
-              style: GoogleFonts.inter(
-                color: textSecondary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          'Patient Records',
-          style: GoogleFonts.inter(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            color: textPrimary,
-          ),
-        ),
-        backgroundColor: backgroundColor,
-        elevation: 0,
-        centerTitle: true,
+        title: const Text('Patient Records'),
         leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.arrow_back_ios_rounded, color: primaryColor, size: 20),
-          ),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (_) => const AdminDashboard()),
@@ -1023,59 +479,45 @@ class _PatientRecordsScreenAdminState extends State<PatientRecordsScreen>
         actions: [
           if (_selectedPatientId != null)
             IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.refresh_rounded, color: primaryColor, size: 20),
-              ),
+              icon: const Icon(Icons.refresh_rounded),
               onPressed: () => _loadPatientData(_selectedPatientId!),
             ),
         ],
       ),
       body: _isLoading
-          ? _buildLoadingWidget()
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildErrorMessage(),
-            _buildAnimatedSearchSection(),
-            if (_selectedPatientId != null)
-              StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection(Collections.users)
-                    .doc(_selectedPatientId)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Container(
-                      margin: const EdgeInsets.all(20),
-                      child: Text(
-                        'Error: ${snapshot.error}',
-                        style: GoogleFonts.inter(color: errorColor),
-                      ),
-                    );
-                  }
+              child: Column(
+                children: [
+                  _buildErrorMessage(),
+                  _buildSearchSection(),
+                  if (_selectedPatientId != null)
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance.collection(Collections.users).doc(_selectedPatientId).snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return Container(
+                            margin: const EdgeInsets.all(16),
+                            child: Text('Error: ${snapshot.error}', style: GoogleFonts.inter(color: AppColors.error)),
+                          );
+                        }
 
-                  if (!snapshot.hasData) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(40),
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(40),
+                              child: CircularProgressIndicator(color: AppColors.primary),
+                            ),
+                          );
+                        }
 
-                  final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-                  return _buildAnimatedPatientRecord(data);
-                },
+                        return _buildPatientRecord();
+                      },
+                    ),
+                  const SizedBox(height: 24),
+                ],
               ),
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
+            ),
     );
   }
 }

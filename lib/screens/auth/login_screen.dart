@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
+  bool _isSubmitting = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -25,11 +26,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOut,
     );
     _loadRememberMe();
     _animationController.forward();
@@ -61,6 +62,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   Future<void> _login() async {
+    setState(() => _isSubmitting = true);
     try {
       final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -70,7 +72,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       final presenceService = PresenceService();
       presenceService.setupPresence();
       debugPrint('Login successful for user: ${credential.user?.uid}');
-      _showModal(context, 'Success', 'Login successful!', isSuccess: true);
     } on FirebaseAuthException catch (e) {
       String errorMessage;
       switch (e.code) {
@@ -96,79 +97,35 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           errorMessage = 'An error occurred: ${e.message}';
       }
       debugPrint('Login error: $errorMessage');
-      _showModal(context, 'Error', errorMessage, isSuccess: false);
+      if (mounted) _showSnackBar(errorMessage, isError: true);
     } catch (e) {
       debugPrint('Unexpected login error: $e');
-      _showModal(context, 'Error', 'An unexpected error occurred.', isSuccess: false);
+      if (mounted) _showSnackBar('An unexpected error occurred.', isError: true);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
-  void _showModal(BuildContext context, String title, String message, {required bool isSuccess}) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 8,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          padding: const EdgeInsets.all(24),
-          width: 350,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 12,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isSuccess ? Icons.check_circle : Icons.error_outline,
-                color: isSuccess ? AppColors.primary : Colors.redAccent,
-                size: 48,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: GoogleFonts.roboto(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.roboto(
-                  fontSize: 16,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  elevation: 2,
-                ),
-                child: Text(
-                  'OK',
-                  style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-              ),
-            ],
-          ),
+  void _showSnackBar(String message, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(message, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500)),
+            ),
+          ],
         ),
+        backgroundColor: isError ? AppColors.error : AppColors.success,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -184,180 +141,135 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  AppColors.primary.withOpacity(0.1),
-                ],
-              ),
-              image: const DecorationImage(
-                image: NetworkImage(
-                  'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d',
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420, minWidth: 300),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.textPrimary.withOpacity(0.05),
+                      blurRadius: 30,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
                 ),
-                fit: BoxFit.cover,
-                opacity: 0.2,
-              ),
-            ),
-            child: Container(
-              color: Colors.black.withOpacity(0.3),
-            ),
-          ),
-          Center(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 450, minWidth: 300),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 12,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
                         'images/Logo.jpg',
-                        height: 80,
-                        width: 80,
-                        errorBuilder: (context, error, stackTrace) => const Icon(
-                          Icons.local_hospital,
-                          size: 80,
-                          color: AppColors.primary,
+                        height: 72,
+                        width: 72,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 72,
+                          width: 72,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.local_hospital_rounded, size: 36, color: Colors.white),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Deseret Hospital Login',
-                        style: GoogleFonts.roboto(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Deseret Hospital',
+                      style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Sign in to your dashboard',
+                      style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 28),
+                    TextField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      onSubmitted: (_) => _login(),
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            color: AppColors.textSecondary,
+                            size: 20,
+                          ),
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      TextField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          labelStyle: GoogleFonts.roboto(color: Colors.grey[600]),
-                          border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(8)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey[400]!, width: 1.5),
-                            borderRadius: const BorderRadius.all(Radius.circular(8)),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: AppColors.primary, width: 2),
-                            borderRadius: BorderRadius.all(Radius.circular(8)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          labelStyle: GoogleFonts.roboto(color: Colors.grey[600]),
-                          border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(8)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey[400]!, width: 1.5),
-                            borderRadius: const BorderRadius.all(Radius.circular(8)),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: AppColors.primary, width: 2),
-                            borderRadius: BorderRadius.all(Radius.circular(8)),
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                              color: AppColors.primary,
-                            ),
-                            onPressed: () {
-                              setState(() => _obscurePassword = !_obscurePassword);
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Checkbox(
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: Checkbox(
                             value: _rememberMe,
                             onChanged: (value) => setState(() => _rememberMe = value!),
-                            shape: const CircleBorder(),
                             activeColor: AppColors.primary,
                           ),
-                          Text(
-                            'Remember Me',
-                            style: GoogleFonts.roboto(fontSize: 14, color: Colors.grey[800]),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: ElevatedButton(
-                          onPressed: _login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            elevation: 4,
-                          ),
-                          child: Text(
-                            'Login',
-                            style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () => Navigator.pushNamed(context, '/forgotPassword'),
-                        child: Text(
-                          'Forgot Password?',
-                          style: GoogleFonts.roboto(
-                            fontSize: 14,
-                            color: AppColors.primary,
-                            decoration: TextDecoration.underline,
-                          ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Remember me',
+                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Deseret Hospital - Caring for Your Health',
-                        style: GoogleFonts.roboto(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                          fontStyle: FontStyle.italic,
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () => Navigator.pushNamed(context, '/forgotPassword'),
+                          child: const Text('Forgot password?'),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting ? null : _login,
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Text('Log in'),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Deseret Hospital · Caring for Your Health',
+                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:clinic_web_dashboard/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:html' as html;
 import 'package:clinic_web_dashboard/screens/auth/auth_gate.dart';
 import 'package:clinic_web_dashboard/screens/auth/login_screen.dart';
@@ -51,17 +52,65 @@ class ClinicWebDashboard extends StatelessWidget {
     return MaterialApp(
       title: 'Deseret Hospital Dashboard',
       theme: ThemeData(
+        useMaterial3: true,
         primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: Colors.white,
+        scaffoldBackgroundColor: AppColors.background,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           primary: AppColors.primary,
-          surface: Colors.white,
+          secondary: AppColors.secondary,
+          surface: AppColors.surface,
+          error: AppColors.error,
         ),
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Colors.black87),
+        textTheme: GoogleFonts.interTextTheme().apply(
+          bodyColor: AppColors.textPrimary,
+          displayColor: AppColors.textPrimary,
         ),
-        useMaterial3: true,
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: false,
+          titleTextStyle: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: AppColors.surface,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.border),
+          ),
+        ),
+        dividerTheme: DividerThemeData(color: AppColors.border, thickness: 1),
       ),
       debugShowCheckedModeBanner: false,
       home: const AuthGate(),

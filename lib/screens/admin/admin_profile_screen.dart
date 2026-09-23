@@ -8,11 +8,10 @@ class AdminProfileScreen extends StatefulWidget {
   const AdminProfileScreen({super.key});
 
   @override
-  _AdminProfileScreenState createState() => _AdminProfileScreenState();
+  State<AdminProfileScreen> createState() => _AdminProfileScreenState();
 }
 
-class _AdminProfileScreenState extends State<AdminProfileScreen>
-    with TickerProviderStateMixin {
+class _AdminProfileScreenState extends State<AdminProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -21,7 +20,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
   bool _isSaving = false;
-  bool _isEditing = true;
   bool _showPasswordChange = false;
   bool _showCurrentPassword = true;
   bool _showNewPassword = true;
@@ -29,50 +27,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
   String? _originalName;
   String? _originalEmail;
 
-  // Professional color scheme
-  final Color primaryColor = AppColors.primary; // Olive green
-  final Color accentColor = const Color(0xFF4CAF50);
-  final Color backgroundColor = const Color(0xFFF8F9FA);
-  final Color cardColor = Colors.white;
-  final Color textPrimary = const Color(0xFF212121);
-  final Color textSecondary = const Color(0xFF757575);
-
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
     _fetchUserData();
-  }
-
-  void _initializeAnimations() {
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-    _slideAnimation = Tween<Offset>(
-            begin: const Offset(0, 0.3), end: Offset.zero)
-        .animate(
-            CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
-    _fadeController.forward();
-    _slideController.forward();
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
-    _slideController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _currentPasswordController.dispose();
@@ -101,7 +63,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
     } catch (e) {
       _showSnackBar('Unable to load profile. Please check your connection and try again.', isError: true);
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -125,13 +87,12 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
       } catch (e) {
         _showSnackBar('Failed to update profile. Please try again later.', isError: true);
       } finally {
-        setState(() => _isSaving = false);
+        if (mounted) setState(() => _isSaving = false);
       }
     }
   }
 
   Future<void> _changePassword() async {
-    // Client-side validation
     if (_currentPasswordController.text.isEmpty ||
         _newPasswordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty) {
@@ -151,30 +112,28 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Validate current password
         final credential = EmailAuthProvider.credential(
             email: user.email!, password: _currentPasswordController.text);
         try {
           await user.reauthenticateWithCredential(credential);
         } on FirebaseAuthException catch (e) {
-          debugPrint('Reauthentication error: ${e.code} - ${e.message}'); // Debug log
+          debugPrint('Reauthentication error: ${e.code} - ${e.message}');
           if (e.code == 'wrong-password' || e.code == 'invalid-credential' || e.code == 'user-mismatch') {
             _showSnackBar('Current password is incorrect.', isError: true);
-            setState(() => _isSaving = false);
+            if (mounted) setState(() => _isSaving = false);
             return;
           } else if (e.code == 'user-not-found' || e.code == 'invalid-email') {
             _showSnackBar('Authentication error. Please sign out and sign in again.', isError: true);
-            setState(() => _isSaving = false);
+            if (mounted) setState(() => _isSaving = false);
             return;
           } else if (e.code == 'too-many-requests') {
             _showSnackBar('Too many attempts. Please try again later.', isError: true);
-            setState(() => _isSaving = false);
+            if (mounted) setState(() => _isSaving = false);
             return;
           }
-          throw e; // Rethrow unexpected Firebase errors
+          rethrow;
         }
 
-        // Update password if reauthentication succeeds
         try {
           await user.updatePassword(_newPasswordController.text);
           _showSnackBar('Password updated successfully!');
@@ -200,10 +159,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
         _showSnackBar('No user is signed in. Please sign in again.', isError: true);
       }
     } catch (e) {
-      debugPrint('Unexpected error: $e'); // Debug log
+      debugPrint('Unexpected error: $e');
       _showSnackBar('An unexpected error occurred. Please check your connection and try again.', isError: true);
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -219,27 +178,17 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              isError ? Icons.error_rounded : Icons.check_circle_rounded,
-              color: Colors.white,
-            ),
+            Icon(isError ? Icons.error_rounded : Icons.check_circle_rounded, color: Colors.white),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                message,
-                style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              child: Text(message, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w500)),
             ),
           ],
         ),
-        backgroundColor: isError ? Colors.red[600] : Colors.green[600],
+        backgroundColor: isError ? AppColors.error : AppColors.success,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -248,34 +197,26 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-                colors: [primaryColor, accentColor],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight),
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.primary.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
           ),
-          child: const Icon(Icons.admin_panel_settings,
-              color: Colors.white, size: 28),
+          child: const Icon(Icons.admin_panel_settings_rounded, color: AppColors.primary, size: 26),
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Admin Profile',
-                style: GoogleFonts.inter(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: textPrimary),
+                'Admin profile',
+                style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 'Manage your account settings',
-                style:
-                    GoogleFonts.inter(fontSize: 14, color: textSecondary),
+                style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -284,342 +225,183 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
     );
   }
 
-  Widget _buildAnimatedFormField({
+  Widget _buildPasswordField({
     required TextEditingController controller,
     required String label,
-    required IconData icon,
-    String? hint,
-    String? Function(String?)? validator,
-    TextInputType? keyboardType,
-    bool obscureText = false,
-    VoidCallback? onToggleVisibility,
-    bool showToggle = false,
-    int maxLines = 1,
+    required bool obscureText,
+    required VoidCallback onToggleVisibility,
+    required String? Function(String?) validator,
   }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: TextFormField(
-        controller: controller,
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        validator: validator,
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: GoogleFonts.inter(
-              color: primaryColor,
-              fontSize: 16,
-              fontWeight: FontWeight.w500),
-          hintText: hint,
-          hintStyle: GoogleFonts.inter(
-              color: textSecondary.withOpacity(0.7), fontSize: 14),
-          prefixIcon: Container(
-            padding: const EdgeInsets.all(14),
-            child: Icon(icon, color: primaryColor, size: 22),
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+        suffixIcon: IconButton(
+          icon: Icon(
+            obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+            color: AppColors.textSecondary,
+            size: 20,
           ),
-          suffixIcon: showToggle
-              ? IconButton(
-                  icon: Icon(
-                      obscureText
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: primaryColor,
-                      size: 22),
-                  onPressed: onToggleVisibility,
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: primaryColor, width: 2),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          onPressed: onToggleVisibility,
         ),
-        style: GoogleFonts.inter(color: textPrimary, fontSize: 16),
-      ),
-    );
-  }
-
-  Widget _buildAnimatedActionButtons() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: _isSaving ? null : _saveProfile,
-              icon: _isSaving
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Icon(Icons.save_rounded, size: 20),
-              label: Text(
-                _isSaving ? 'Saving...' : 'Save Changes',
-                style: GoogleFonts.inter(
-                    fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 2,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: _resetForm,
-              icon: const Icon(Icons.cancel_rounded, size: 20),
-              label: Text(
-                'Cancel',
-                style: GoogleFonts.inter(
-                    fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: textSecondary,
-                side: BorderSide(color: Colors.grey[400]!, width: 1.5),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildPasswordChangeSection() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-      height: _showPasswordChange ? 400 : 0,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            _buildAnimatedFormField(
-              controller: _currentPasswordController,
-              label: 'Current Password',
-              icon: Icons.lock_outline,
-              obscureText: _showCurrentPassword,
-              showToggle: true,
-              onToggleVisibility: () =>
-                  setState(() => _showCurrentPassword = !_showCurrentPassword),
-              validator: (value) =>
-                  value!.isEmpty ? 'Please enter your current password' : null,
-            ),
-            const SizedBox(height: 20),
-            _buildAnimatedFormField(
-              controller: _newPasswordController,
-              label: 'New Password',
-              icon: Icons.lock,
-              obscureText: _showNewPassword,
-              showToggle: true,
-              onToggleVisibility: () =>
-                  setState(() => _showNewPassword = !_showNewPassword),
-              validator: (value) {
-                if (value!.isEmpty) return 'Please enter a new password';
-                if (value.length < 8) return 'Password must be at least 8 characters';
-                return null;
-              },
-            ),
-            const SizedBox(height: 20),
-            _buildAnimatedFormField(
-              controller: _confirmPasswordController,
-              label: 'Confirm New Password',
-              icon: Icons.lock,
-              obscureText: _showConfirmPassword,
-              showToggle: true,
-              onToggleVisibility: () =>
-                  setState(() => _showConfirmPassword = !_showConfirmPassword),
-              validator: (value) {
-                if (value!.isEmpty) return 'Please confirm your new password';
-                if (value != _newPasswordController.text) return 'Passwords do not match';
-                return null;
-              },
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: _isSaving ? null : _changePassword,
-              icon: _isSaving
-                  ? SizedBox(
-                      width: 20,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white)),
-                    )
-                  : Icon(Icons.update_rounded, size: 20),
-              label: Text(
-                _isSaving ? 'Updating...' : 'Update Password',
-                style: GoogleFonts.inter(
-                    fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 50),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                elevation: 2,
-              ),
-            ),
-          ],
+    if (!_showPasswordChange) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        const SizedBox(height: 20),
+        _buildPasswordField(
+          controller: _currentPasswordController,
+          label: 'Current password',
+          obscureText: _showCurrentPassword,
+          onToggleVisibility: () => setState(() => _showCurrentPassword = !_showCurrentPassword),
+          validator: (value) => value!.isEmpty ? 'Please enter your current password' : null,
         ),
-      ),
+        const SizedBox(height: 16),
+        _buildPasswordField(
+          controller: _newPasswordController,
+          label: 'New password',
+          obscureText: _showNewPassword,
+          onToggleVisibility: () => setState(() => _showNewPassword = !_showNewPassword),
+          validator: (value) {
+            if (value!.isEmpty) return 'Please enter a new password';
+            if (value.length < 8) return 'Password must be at least 8 characters';
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        _buildPasswordField(
+          controller: _confirmPasswordController,
+          label: 'Confirm new password',
+          obscureText: _showConfirmPassword,
+          onToggleVisibility: () => setState(() => _showConfirmPassword = !_showConfirmPassword),
+          validator: (value) {
+            if (value!.isEmpty) return 'Please confirm your new password';
+            if (value != _newPasswordController.text) return 'Passwords do not match';
+            return null;
+          },
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _isSaving ? null : _changePassword,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.update_rounded, size: 18),
+            label: Text(_isSaving ? 'Updating...' : 'Update password'),
+          ),
+        ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          'Admin Profile',
-          style: GoogleFonts.inter(
-              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 20),
-        ),
-        backgroundColor: primaryColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        centerTitle: true,
+        title: const Text('Admin Profile'),
       ),
       body: _isLoading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(primaryColor)),
-                  const SizedBox(height: 16),
-                  Text('Loading profile...',
-                      style: GoogleFonts.inter(
-                          color: textSecondary, fontSize: 16)),
-                ],
-              ),
-            )
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : SingleChildScrollView(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Column(
-                  children: [
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: SlideTransition(
-                        position: _slideAnimation,
-                        child: Container(
-                          margin: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              )
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Container(
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildProfileHeader(),
+                        const SizedBox(height: 24),
+                        const Divider(height: 1),
+                        const SizedBox(height: 24),
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              TextFormField(
+                                controller: _nameController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Name',
+                                  prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+                                ),
+                                validator: (value) => (value?.isEmpty ?? true) ? 'Please enter your name' : null,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  labelText: 'Email address',
+                                  prefixIcon: Icon(Icons.email_outlined, size: 20),
+                                ),
+                                validator: (value) {
+                                  if (value!.isEmpty) return 'Please enter your email';
+                                  if (!value.contains('@')) return 'Please enter a valid email';
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: _isSaving ? null : _saveProfile,
+                                      icon: _isSaving
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                            )
+                                          : const Icon(Icons.save_rounded, size: 18),
+                                      label: Text(_isSaving ? 'Saving...' : 'Save changes'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: _resetForm,
+                                      child: const Text('Cancel'),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(28),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildProfileHeader(),
-                                const SizedBox(height: 32),
-                                Divider(color: Colors.grey[300], height: 1),
-                                const SizedBox(height: 28),
-                                Form(
-                                  key: _formKey,
-                                  child: Column(
-                                    children: [
-                                      _buildAnimatedFormField(
-                                        controller: _nameController,
-                                        label: 'Name',
-                                        icon: Icons.person_outline,
-                                        validator: (value) {
-                                          if (value?.isEmpty ?? true) {
-                                            return 'Please enter your name';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                      const SizedBox(height: 20),
-                                      _buildAnimatedFormField(
-                                        controller: _emailController,
-                                        label: 'Email Address',
-                                        icon: Icons.email_outlined,
-                                        keyboardType: TextInputType.emailAddress,
-                                        validator: (value) {
-                                          if (value!.isEmpty) {
-                                            return 'Please enter your email';
-                                          }
-                                          if (!value.contains('@')) {
-                                            return 'Please enter a valid email';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                      const SizedBox(height: 32),
-                                      _buildAnimatedActionButtons(),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-                                ElevatedButton(
-                                  onPressed: () => setState(() => _showPasswordChange = !_showPasswordChange),
-                                  child: Text(
-                                    _showPasswordChange
-                                        ? 'Hide Password Change'
-                                        : 'Change Password',
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryColor,
-                                    foregroundColor: Colors.white,
-                                    minimumSize: const Size(double.infinity, 50),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 10),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    elevation: 4,
-                                  ),
-                                ),
-                                _buildPasswordChangeSection(),
-                              ],
-                            ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => setState(() => _showPasswordChange = !_showPasswordChange),
+                            icon: Icon(_showPasswordChange ? Icons.expand_less_rounded : Icons.lock_reset_rounded, size: 18),
+                            label: Text(_showPasswordChange ? 'Hide password change' : 'Change password'),
                           ),
                         ),
-                      ),
+                        _buildPasswordChangeSection(),
+                      ],
                     ),
-                    const SizedBox(height: 32),
-                  ],
+                  ),
                 ),
               ),
             ),

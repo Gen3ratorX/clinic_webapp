@@ -14,8 +14,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
   String? _errorMessage;
   String? _successMessage;
+  bool _isSubmitting = false;
 
   Future<void> _resetPassword() async {
+    setState(() => _isSubmitting = true);
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(
         email: _emailController.text.trim(),
@@ -48,6 +50,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         _successMessage = null;
       });
       debugPrint('Unexpected password reset error: $e');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -60,91 +64,107 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Forgot Password'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        title: const Text('Forgot password'),
       ),
       body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 450, minWidth: 300),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Reset Password',
-                  style: GoogleFonts.roboto(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420, minWidth: 300),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.textPrimary.withOpacity(0.05),
+                    blurRadius: 30,
+                    offset: const Offset(0, 12),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Enter your email address to receive a password reset link.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.roboto(fontSize: 16, color: Colors.grey[800]),
-                ),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    labelStyle: GoogleFonts.roboto(color: Colors.grey[600]),
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.grey[400]!, width: 1.5),
-                      borderRadius: const BorderRadius.all(Radius.circular(8)),
-                    ),
-                    focusedBorder: const OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primary, width: 2),
-                      borderRadius: BorderRadius.all(Radius.circular(8)),
-                    ),
+                    child: const Icon(Icons.lock_reset_rounded, color: AppColors.primary, size: 26),
                   ),
-                ),
-                const SizedBox(height: 16),
-                if (_errorMessage != null)
+                  const SizedBox(height: 16),
                   Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: Colors.red),
+                    'Reset your password',
+                    style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                   ),
-                if (_successMessage != null)
+                  const SizedBox(height: 8),
                   Text(
-                    _successMessage!,
-                    style: const TextStyle(color: Colors.green),
+                    'Enter your email address and we\'ll send you a link to reset your password.',
+                    style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
                   ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _resetPassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    elevation: 4,
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _emailController,
+                    onSubmitted: (_) => _resetPassword(),
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
+                    ),
                   ),
-                  child: Text(
-                    'Send Reset Link',
-                    style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.error_outline_rounded, size: 16, color: AppColors.error),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: GoogleFonts.inter(fontSize: 13, color: AppColors.error),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (_successMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.success),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _successMessage!,
+                            style: GoogleFonts.inter(fontSize: 13, color: AppColors.success),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isSubmitting ? null : _resetPassword,
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text('Send reset link'),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

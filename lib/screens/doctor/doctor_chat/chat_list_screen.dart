@@ -1,16 +1,16 @@
 import 'package:clinic_web_dashboard/constants/app_constants.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'chat_service.dart';
 import 'chat.dart';
 import 'chat_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class DoctorChatListScreen extends StatefulWidget {
   final String doctorId;
 
-  const DoctorChatListScreen({Key? key, required this.doctorId}) : super(key: key);
+  const DoctorChatListScreen({super.key, required this.doctorId});
 
   @override
   State<DoctorChatListScreen> createState() => _DoctorChatListScreenState();
@@ -25,23 +25,17 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
 
-
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
     _animationController.forward();
-
   }
 
   @override
@@ -54,7 +48,7 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -69,60 +63,35 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              // Back Button
-              IconButton(
-                icon: const Icon(Icons.arrow_back, size: 28),
-                color: Colors.grey[800],
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Messages',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.grey[900],
-                      height: 1.2,
-                    ),
-                  ),
-                  Text(
-                    'Patient conversations',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+              if (Navigator.of(context).canPop())
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  color: AppColors.textSecondary,
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              Text(
+                'Messages',
+                style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
             ],
           ),
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
             ),
             child: IconButton(
               icon: Icon(
-                _isSearching ? Icons.close : Icons.search,
-                color: Colors.grey[700],
-                size: 24,
+                _isSearching ? Icons.close_rounded : Icons.search_rounded,
+                color: AppColors.textSecondary,
+                size: 22,
               ),
               onPressed: () {
                 setState(() {
@@ -144,31 +113,22 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
     if (!_isSearching) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
       ),
       child: TextField(
         controller: _searchController,
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
-        },
+        onChanged: (value) => setState(() => _searchQuery = value),
+        style: GoogleFonts.inter(fontSize: 14),
         decoration: InputDecoration(
           hintText: 'Search conversations...',
-          hintStyle: TextStyle(color: Colors.grey[500]),
-          prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
+          hintStyle: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
+          prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
@@ -190,9 +150,9 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
         final filteredChats = _searchQuery.isEmpty
             ? allChats
             : allChats.where((chat) {
-          return chat.userName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              chat.lastMessage.toLowerCase().contains(_searchQuery.toLowerCase());
-        }).toList();
+                return chat.userName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                    chat.lastMessage.toLowerCase().contains(_searchQuery.toLowerCase());
+              }).toList();
 
         if (filteredChats.isEmpty) {
           return _buildEmptyState();
@@ -201,264 +161,146 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
         return FadeTransition(
           opacity: _fadeAnimation,
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: filteredChats.length,
-            itemBuilder: (context, index) {
-              return TweenAnimationBuilder(
-                duration: Duration(milliseconds: 300 + (index * 100)),
-                tween: Tween<double>(begin: 0, end: 1),
-                builder: (context, double value, child) {
-                  return Transform.translate(
-                    offset: Offset(0, 50 * (1 - value)),
-                    child: Opacity(
-                      opacity: value,
-                      child: _buildChatTile(filteredChats[index], index),
-                    ),
-                  );
-                },
-              );
-            },
+            itemBuilder: (context, index) => _buildChatTile(filteredChats[index]),
           ),
         );
       },
     );
   }
 
-  Widget _buildChatTile(Chat chat, int index) {
+  Widget _buildChatTile(Chat chat) {
     final displayName = chat.userName;
     const subtitle = 'Patient';
     final timeAgo = _formatTimeAgo(chat.lastMessageTime);
     final unreadCount = chat.getUnreadCount(widget.doctorId, 'doctor');
-
-    // Generate consistent colors based on name
-    final colors = _getAvatarColors(displayName);
+    final avatarColors = _getAvatarColors(displayName);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        // Add border for unread messages
-        border: unreadCount > 0
-            ? Border.all(color: Colors.blue[300]!.withOpacity(0.3), width: 2)
-            : null,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: unreadCount > 0 ? AppColors.primary.withOpacity(0.3) : AppColors.border),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           onTap: () async {
-            // Mark messages as read when opening chat
             if (unreadCount > 0) {
               await _markMessagesAsRead(chat.id);
             }
-
+            if (!mounted) return;
             Navigator.push(
               context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => DoctorChatScreen(
+              MaterialPageRoute(
+                builder: (context) => DoctorChatScreen(
                   chatId: chat.id,
                   doctorId: widget.doctorId,
                   userId: chat.userId,
                   userName: displayName,
                   encryptionKey: chat.encryptionKey,
                 ),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return SlideTransition(
-                    position: animation.drive(
-                      Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
-                          .chain(CurveTween(curve: Curves.easeInOut)),
-                    ),
-                    child: child,
-                  );
-                },
               ),
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Avatar with online status indicator
-                Hero(
-                  tag: 'avatar_${chat.id}',
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
+                Stack(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: avatarColors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Center(
+                        child: Text(
+                          displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 14,
+                        height: 14,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: colors,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colors[0].withOpacity(0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          color: AppColors.success,
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(color: Colors.white, width: 2),
                         ),
                       ),
-                      // Online status indicator
-                      Positioned(
-                        right: 2,
-                        bottom: 2,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: Colors.green[400],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Name and time row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Text(
                               displayName,
-                              style: TextStyle(
-                                fontWeight: unreadCount > 0 ? FontWeight.w800 : FontWeight.w700,
-                                fontSize: 18,
-                                color: Colors.grey[900],
+                              style: GoogleFonts.inter(
+                                fontWeight: unreadCount > 0 ? FontWeight.w700 : FontWeight.w600,
+                                fontSize: 15,
+                                color: AppColors.textPrimary,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Row(
-                            children: [
-                              // Unread count badge
-                              if (unreadCount > 0)
-                                Container(
-                                  margin: const EdgeInsets.only(right: 8),
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 24,
-                                    minHeight: 24,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red[500],
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.red[500]!.withOpacity(0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      unreadCount > 99 ? '99+' : unreadCount.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              // Time badge
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: unreadCount > 0
-                                      ? Colors.blue[50]
-                                      : Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                          if (unreadCount > 0)
+                            Container(
+                              margin: const EdgeInsets.only(right: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                              decoration: BoxDecoration(
+                                color: AppColors.error,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Center(
                                 child: Text(
-                                  timeAgo,
-                                  style: TextStyle(
-                                    color: unreadCount > 0
-                                        ? Colors.blue[600]
-                                        : Colors.grey[600],
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
                                 ),
                               ),
-                            ],
+                            ),
+                          Text(
+                            timeAgo,
+                            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.inter(color: avatarColors[0], fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 4),
-                      // Subtitle badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: colors[0].withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                      Text(
+                        chat.lastMessage.isEmpty ? 'Start conversation' : chat.lastMessage,
+                        style: GoogleFonts.inter(
+                          color: unreadCount > 0 ? AppColors.textPrimary : AppColors.textSecondary,
+                          fontSize: 13,
+                          fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.w400,
                         ),
-                        child: Text(
-                          subtitle,
-                          style: TextStyle(
-                            color: colors[0],
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Last message
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              chat.lastMessage.isEmpty ? 'Start conversation' : chat.lastMessage,
-                              style: TextStyle(
-                                color: unreadCount > 0
-                                    ? Colors.grey[800]
-                                    : Colors.grey[600],
-                                fontSize: 15,
-                                fontWeight: unreadCount > 0
-                                    ? FontWeight.w600
-                                    : FontWeight.w500,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          // Message status indicator
-                          if (chat.lastMessage.isNotEmpty)
-                            Icon(
-                              Icons.check_circle,
-                              size: 16,
-                              color: Colors.grey[400],
-                            ),
-                        ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -471,7 +313,6 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
     );
   }
 
-  // Helper method to mark messages as read
   Future<void> _markMessagesAsRead(String chatId) async {
     try {
       await FirebaseFirestore.instance
@@ -484,39 +325,8 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
   }
 
   Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
-              strokeWidth: 3,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Loading conversations...',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+    return const Center(
+      child: CircularProgressIndicator(color: AppColors.primary),
     );
   }
 
@@ -525,44 +335,17 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.red[50],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-          ),
-          const SizedBox(height: 24),
+          const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.error),
+          const SizedBox(height: 16),
           Text(
             'Something went wrong',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Please try again later',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () => setState(() {}),
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded, size: 18),
             label: const Text('Retry'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
           ),
         ],
       ),
@@ -575,36 +358,22 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(30),
+              color: AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 80,
-              color: Colors.blue[400],
-            ),
+            child: const Icon(Icons.chat_bubble_outline_rounded, size: 56, color: AppColors.primary),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
           Text(
             _searchQuery.isNotEmpty ? 'No matching conversations' : 'No conversations yet',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey[800],
-            ),
+            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
-            _searchQuery.isNotEmpty
-                ? 'Try adjusting your search terms'
-                : 'Patient conversations will appear here',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
+            _searchQuery.isNotEmpty ? 'Try adjusting your search terms' : 'Patient conversations will appear here',
+            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -612,21 +381,20 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen>
     );
   }
 
-  // Helper methods
   List<Color> _getAvatarColors(String name) {
-    final colors = [
-      [Colors.blue[500]!, Colors.blue[700]!],
-      [Colors.purple[500]!, Colors.purple[700]!],
-      [Colors.green[500]!, Colors.green[700]!],
-      [Colors.orange[500]!, Colors.orange[700]!],
-      [Colors.pink[500]!, Colors.pink[700]!],
-      [Colors.teal[500]!, Colors.teal[700]!],
-      [Colors.indigo[500]!, Colors.indigo[700]!],
-      [Colors.red[500]!, Colors.red[700]!],
+    const colorPairs = [
+      [Color(0xFF3B82F6), Color(0xFF2563EB)],
+      [Color(0xFFA855F7), Color(0xFF7C3AED)],
+      [Color(0xFF22C55E), Color(0xFF16A34A)],
+      [Color(0xFFF97316), Color(0xFFEA580C)],
+      [Color(0xFFEC4899), Color(0xFFDB2777)],
+      [Color(0xFF14B8A6), Color(0xFF0D9488)],
+      [Color(0xFF6366F1), Color(0xFF4F46E5)],
+      [Color(0xFFEF4444), Color(0xFFDC2626)],
     ];
 
-    final index = name.hashCode % colors.length;
-    return colors[index.abs()];
+    final index = name.hashCode % colorPairs.length;
+    return colorPairs[index.abs()];
   }
 
   String _formatTimeAgo(DateTime dateTime) {

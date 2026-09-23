@@ -68,7 +68,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Messages', style: GoogleFonts.roboto(color: Colors.white)),
+        title: Text('Messages', style: GoogleFonts.inter(color: Colors.white)),
         backgroundColor: AppColors.primary,
       ),
       body: Column(
@@ -84,10 +84,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.roboto()));
+                  return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.inter()));
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text('No messages yet', style: GoogleFonts.roboto()));
+                  return Center(child: Text('No messages yet', style: GoogleFonts.inter()));
                 }
 
                 final messages = snapshot.data!.docs;
@@ -114,14 +114,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           children: [
                             Text(
                               message['content'],
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                 color: isSender ? Colors.white : Colors.black,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _formatTimestamp(message['timestamp']),
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: isSender ? Colors.white70 : Colors.black54,
                               ),
@@ -144,7 +144,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     controller: _messageController,
                     decoration: InputDecoration(
                       hintText: 'Type a message',
-                      hintStyle: GoogleFonts.roboto(),
+                      hintStyle: GoogleFonts.inter(),
                       border: const OutlineInputBorder(),
                     ),
                     onSubmitted: (_) => _sendMessage(),
@@ -157,7 +157,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                   ),
-                  child: Text('Send', style: GoogleFonts.roboto()),
+                  child: Text('Send', style: GoogleFonts.inter()),
                 ),
               ],
             ),

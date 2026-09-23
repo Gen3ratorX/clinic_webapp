@@ -16,7 +16,7 @@ class DoctorAppointmentScreen extends StatefulWidget {
   const DoctorAppointmentScreen({super.key});
 
   @override
-  _DoctorAppointmentScreenState createState() => _DoctorAppointmentScreenState();
+  State<DoctorAppointmentScreen> createState() => _DoctorAppointmentScreenState();
 }
 
 class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
@@ -58,7 +58,7 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
     } catch (e) {
       _showSnackBar('Error initializing app: $e', isError: true);
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -109,11 +109,11 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: GoogleFonts.roboto(fontSize: 14)),
-        backgroundColor: isError ? Colors.red[600] : Colors.green[600],
+        content: Text(message, style: GoogleFonts.inter(fontSize: 14, color: Colors.white)),
+        backgroundColor: isError ? AppColors.error : AppColors.success,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(10),
-        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -130,39 +130,29 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F8FF),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: _isSearching
             ? TextField(
-          controller: _searchController,
-          autofocus: true,
-          style: GoogleFonts.roboto(color: Colors.white, fontSize: 16),
-          decoration: InputDecoration(
-            hintText: 'Search by patient name...',
-            hintStyle: GoogleFonts.roboto(color: Colors.white70),
-            border: InputBorder.none,
-          ),
-        )
-            : Text(
-          'My Appointments',
-          style: GoogleFonts.roboto(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: const Color(0xFF2E86AB),
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+                controller: _searchController,
+                autofocus: true,
+                style: GoogleFonts.inter(color: Colors.white, fontSize: 16),
+                decoration: InputDecoration(
+                  hintText: 'Search by patient name...',
+                  hintStyle: GoogleFonts.inter(color: Colors.white70),
+                  border: InputBorder.none,
+                ),
+              )
+            : const Text('My Appointments'),
         actions: [
           IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
             onPressed: () {
               setState(() {
                 _isSearching = !_isSearching;
@@ -172,28 +162,25 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
                 }
               });
             },
-            tooltip: _isSearching ? 'Cancel Search' : 'Search Appointments',
+            tooltip: _isSearching ? 'Cancel search' : 'Search appointments',
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: () => setState(() {}),
             tooltip: 'Refresh',
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
+          preferredSize: const Size.fromHeight(48),
           child: Container(
             color: Colors.white,
             child: TabBar(
               controller: _tabController,
-              indicatorColor: const Color(0xFF2E86AB),
+              indicatorColor: AppColors.primary,
               indicatorWeight: 3,
-              labelColor: const Color(0xFF2E86AB),
-              unselectedLabelColor: Colors.grey[600],
-              labelStyle: GoogleFonts.roboto(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              labelColor: AppColors.primary,
+              unselectedLabelColor: AppColors.textSecondary,
+              labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
               tabs: const [
                 Tab(text: 'Today'),
                 Tab(text: 'Upcoming'),
@@ -224,79 +211,55 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
   Widget _buildDoctorInfoCard() {
     if (_doctorInfo == null) return const SizedBox.shrink();
 
-    return Semantics(
-      label: 'Doctor Profile',
-      child: Container(
-        margin: const EdgeInsets.all(20),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF2E86AB), Color(0xFF1A237E)],
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: Colors.white.withOpacity(0.15),
+            child: const Icon(Icons.person_rounded, color: Colors.white, size: 26),
           ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF2E86AB).withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dr. ${_doctorInfo!['name'] ?? 'Unknown'}',
+                  style: GoogleFonts.inter(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  _doctorInfo!['specialization'] ?? 'Doctor',
+                  style: GoogleFonts.inter(color: Colors.white.withOpacity(0.9), fontSize: 14),
+                ),
+                Text(
+                  'License: ${_doctorInfo!['licenseNumber'] ?? 'N/A'}',
+                  style: GoogleFonts.inter(color: Colors.white.withOpacity(0.75), fontSize: 12),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.white.withOpacity(0.2),
-              child: const Icon(Icons.person, color: Colors.white, size: 30),
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Dr. ${_doctorInfo!['name'] ?? 'Unknown'}',
-                    style: GoogleFonts.roboto(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    _doctorInfo!['specialization'] ?? 'Doctor',
-                    style: GoogleFonts.roboto(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    'License: ${_doctorInfo!['licenseNumber'] ?? 'N/A'}',
-                    style: GoogleFonts.roboto(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTodayTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('Today\'s Schedule'),
-          const SizedBox(height: 15),
+          _buildSectionTitle("Today's schedule"),
+          const SizedBox(height: 14),
           _buildTodayStats(),
-          const SizedBox(height: 25),
+          const SizedBox(height: 22),
           _buildAppointmentsList(isToday: true),
         ],
       ),
@@ -305,16 +268,16 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
 
   Widget _buildUpcomingTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('Filter by Date'),
-          const SizedBox(height: 15),
+          _buildSectionTitle('Filter by date'),
+          const SizedBox(height: 14),
           _buildDateFilter(),
-          const SizedBox(height: 25),
-          _buildSectionTitle('Upcoming Appointments'),
-          const SizedBox(height: 15),
+          const SizedBox(height: 22),
+          _buildSectionTitle('Upcoming appointments'),
+          const SizedBox(height: 14),
           _buildAppointmentsList(isUpcoming: true),
         ],
       ),
@@ -323,16 +286,16 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
 
   Widget _buildHistoryTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('Filter by Date'),
-          const SizedBox(height: 15),
+          _buildSectionTitle('Filter by date'),
+          const SizedBox(height: 14),
           _buildDateFilter(),
-          const SizedBox(height: 25),
-          _buildSectionTitle('Appointment History'),
-          const SizedBox(height: 15),
+          const SizedBox(height: 22),
+          _buildSectionTitle('Appointment history'),
+          const SizedBox(height: 14),
           _buildAppointmentsList(isHistory: true),
         ],
       ),
@@ -342,11 +305,7 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: GoogleFonts.roboto(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: const Color(0xFF1A237E),
-      ),
+      style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
     );
   }
 
@@ -355,12 +314,10 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
       stream: _getTodayAppointmentsStream(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
         }
 
-        final appointments = snapshot.data!.docs
-            .where((doc) => _filterAppointment(doc))
-            .toList();
+        final appointments = snapshot.data!.docs.where((doc) => _filterAppointment(doc)).toList();
         final total = appointments.length;
         final pending = appointments.where((doc) => doc['status'] == 'pending').length;
         final confirmed = appointments.where((doc) => doc['status'] == 'confirmed').length;
@@ -368,13 +325,13 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
 
         return Row(
           children: [
-            Expanded(child: _buildStatCard('Total', total.toString(), Icons.calendar_today, Colors.blue)),
+            Expanded(child: _buildStatCard('Total', total.toString(), Icons.calendar_today_rounded, AppColors.primary)),
             const SizedBox(width: 10),
-            Expanded(child: _buildStatCard('Pending', pending.toString(), Icons.pending, Colors.orange)),
+            Expanded(child: _buildStatCard('Pending', pending.toString(), Icons.pending_rounded, AppColors.warning)),
             const SizedBox(width: 10),
-            Expanded(child: _buildStatCard('Confirmed', confirmed.toString(), Icons.check_circle, Colors.green)),
+            Expanded(child: _buildStatCard('Confirmed', confirmed.toString(), Icons.check_circle_rounded, AppColors.success)),
             const SizedBox(width: 10),
-            Expanded(child: _buildStatCard('Completed', completed.toString(), Icons.done_all, Colors.purple)),
+            Expanded(child: _buildStatCard('Completed', completed.toString(), Icons.done_all_rounded, AppColors.secondary)),
           ],
         );
       },
@@ -382,42 +339,20 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Semantics(
-      label: '$title: $value',
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: GoogleFonts.roboto(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF1A237E),
-              ),
-            ),
-            Text(
-              title,
-              style: GoogleFonts.roboto(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 8),
+          Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          Text(title, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+        ],
       ),
     );
   }
@@ -428,63 +363,36 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
     return Row(
       children: [
         Expanded(
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: filterDate ?? DateTime.now(),
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2030),
-                  builder: (context, child) => Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.light(
-                        primary: Color(0xFF2E86AB),
-                        onPrimary: Colors.white,
-                        surface: Colors.white,
-                      ),
-                      dialogBackgroundColor: Colors.white,
-                    ),
-                    child: child!,
+          child: InkWell(
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: filterDate ?? DateTime.now(),
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2030),
+              );
+              if (date != null) {
+                setState(() => filterDate = date);
+                HapticFeedback.selectionClick();
+              }
+            },
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary.withOpacity(0.05) : Colors.white,
+                border: Border.all(color: isSelected ? AppColors.primary : AppColors.border, width: isSelected ? 2 : 1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_today_rounded, size: 16, color: isSelected ? AppColors.primary : AppColors.textSecondary),
+                  const SizedBox(width: 8),
+                  Text(
+                    filterDate == null ? 'Select date' : DateFormat('MMMM d, yyyy').format(filterDate!),
+                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: isSelected ? AppColors.primary : AppColors.textPrimary),
                   ),
-                );
-                if (date != null) {
-                  setState(() => filterDate = date);
-                  HapticFeedback.selectionClick();
-                }
-              },
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF2E86AB).withOpacity(0.08) : Colors.white,
-                  border: Border.all(
-                    color: isSelected ? const Color(0xFF2E86AB) : Colors.grey[200]!,
-                    width: isSelected ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: isSelected ? const Color(0xFF2E86AB) : Colors.grey[600],
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      filterDate == null
-                          ? 'Select Date'
-                          : DateFormat('MMMM d, yyyy').format(filterDate!),
-                      style: GoogleFonts.roboto(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? const Color(0xFF2E86AB) : const Color(0xFF1A237E),
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
@@ -497,15 +405,8 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
                 setState(() => filterDate = null);
                 HapticFeedback.selectionClick();
               },
-              icon: const Icon(Icons.clear, size: 14, color: Color(0xFFE53E3E)),
-              label: Text(
-                'Clear',
-                style: GoogleFonts.roboto(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFFE53E3E),
-                ),
-              ),
+              icon: const Icon(Icons.clear_rounded, size: 14, color: AppColors.error),
+              label: Text('Clear', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.error)),
             ),
           ),
       ],
@@ -527,28 +428,21 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
       stream: stream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
         }
         if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}', style: GoogleFonts.roboto(fontSize: 14)),
-          );
+          return Center(child: Text('Error: ${snapshot.error}', style: GoogleFonts.inter(fontSize: 14)));
         }
-        final appointments = snapshot.data!.docs
-            .where((doc) => _filterAppointment(doc))
-            .toList();
+        final appointments = snapshot.data!.docs.where((doc) => _filterAppointment(doc)).toList();
 
         if (appointments.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.calendar_today, size: 64, color: Colors.grey[400]),
+                const Icon(Icons.calendar_today_rounded, size: 56, color: AppColors.textSecondary),
                 const SizedBox(height: 16),
-                Text(
-                  'No appointments found.',
-                  style: GoogleFonts.roboto(fontSize: 16, color: Colors.grey[600]),
-                ),
+                Text('No appointments found.', style: GoogleFonts.inter(fontSize: 15, color: AppColors.textSecondary)),
               ],
             ),
           );
@@ -587,45 +481,15 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
     final date = (appointment['date'] as Timestamp?)?.toDate() ?? DateTime.now();
     final status = appointment['status'] as String? ?? 'unknown';
     final symptoms = appointment['symptoms']?.toString() ?? '';
+    final statusColor = _getStatusColor(status);
 
-    Color statusColor;
-    Color statusBgColor;
-    switch (status) {
-      case 'pending':
-        statusColor = Colors.orange[600]!;
-        statusBgColor = Colors.orange[50]!;
-        break;
-      case 'confirmed':
-        statusColor = Colors.green[600]!;
-        statusBgColor = Colors.green[50]!;
-        break;
-      case 'completed':
-        statusColor = Colors.blue[600]!;
-        statusBgColor = Colors.blue[50]!;
-        break;
-      case 'canceled':
-        statusColor = Colors.red[600]!;
-        statusBgColor = Colors.red[50]!;
-        break;
-      default:
-        statusColor = Colors.grey[600]!;
-        statusBgColor = Colors.grey[50]!;
-    }
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(20),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -633,72 +497,46 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
           Row(
             children: [
               CircleAvatar(
-                radius: 25,
-                backgroundColor: const Color(0xFF2E86AB).withOpacity(0.1),
-                child: const Icon(Icons.person, color: Color(0xFF2E86AB)),
+                radius: 22,
+                backgroundColor: AppColors.primary.withOpacity(0.1),
+                child: const Icon(Icons.person_rounded, color: AppColors.primary),
               ),
-              const SizedBox(width: 15),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       patientName,
-                      style: GoogleFonts.roboto(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1A237E),
-                      ),
+                      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                     ),
                     Text(
                       appointment['type']?.toString() ?? 'Consultation',
-                      style: GoogleFonts.roboto(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: statusBgColor,
-                  borderRadius: BorderRadius.circular(15),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(color: statusColor.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
                 child: Text(
                   status.toUpperCase(),
-                  style: GoogleFonts.roboto(
-                    fontSize: 12,
-                    color: statusColor,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: GoogleFonts.inter(fontSize: 11, color: statusColor, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 14),
           Row(
             children: [
-              Icon(Icons.calendar_today, size: 16, color: Colors.grey[500]),
+              const Icon(Icons.calendar_today_rounded, size: 15, color: AppColors.textSecondary),
               const SizedBox(width: 8),
-              Text(
-                DateFormat('MMMM d, yyyy').format(date),
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(width: 20),
-              Icon(Icons.access_time, size: 16, color: Colors.grey[500]),
+              Text(DateFormat('MMMM d, yyyy').format(date), style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+              const SizedBox(width: 18),
+              const Icon(Icons.access_time_rounded, size: 15, color: AppColors.textSecondary),
               const SizedBox(width: 8),
-              Text(
-                appointment['timeSlot']?.toString() ?? 'N/A',
-                style: GoogleFonts.roboto(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
+              Text(appointment['timeSlot']?.toString() ?? 'N/A', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
             ],
           ),
           if (symptoms.isNotEmpty) ...[
@@ -706,79 +544,45 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.medical_services, size: 16, color: Colors.grey[500]),
+                const Icon(Icons.medical_services_outlined, size: 15, color: AppColors.textSecondary),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    'Symptoms: $symptoms',
-                    style: GoogleFonts.roboto(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
+                  child: Text('Symptoms: $symptoms', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
                 ),
               ],
             ),
           ],
-          const SizedBox(height: 15),
+          const SizedBox(height: 14),
           _buildReportsSection(appointmentId),
           if (!isHistory && status == 'pending') ...[
-            const SizedBox(height: 15),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => _updateAppointmentStatus(appointmentId, 'confirmed'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      'Confirm',
-                      style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                    child: const Text('Confirm'),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => _updateAppointmentStatus(appointmentId, 'canceled'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
+                    style: OutlinedButton.styleFrom(foregroundColor: AppColors.error, side: const BorderSide(color: AppColors.error)),
+                    child: const Text('Cancel'),
                   ),
                 ),
               ],
             ),
           ],
           if (!isHistory && status == 'confirmed') ...[
-            const SizedBox(height: 15),
+            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => _updateAppointmentStatus(appointmentId, 'completed'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E86AB),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
-                  'Mark as Completed',
-                  style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600),
-                ),
+                child: const Text('Mark as completed'),
               ),
             ),
           ],
@@ -787,44 +591,49 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
     );
   }
 
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'pending':
+        return AppColors.warning;
+      case 'confirmed':
+        return AppColors.success;
+      case 'completed':
+        return AppColors.secondary;
+      case 'canceled':
+        return AppColors.error;
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+
   Widget _buildReportsSection(String appointmentId) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey[200]!),
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.assignment, size: 18, color: Colors.grey[700]),
+              const Icon(Icons.assignment_outlined, size: 17, color: AppColors.textSecondary),
               const SizedBox(width: 8),
               Text(
-                'Medical Reports',
-                style: GoogleFonts.roboto(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1A237E),
-                ),
+                'Medical reports',
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
               const Spacer(),
               TextButton.icon(
                 onPressed: () => _showAddReportDialog(appointmentId),
-                icon: const Icon(Icons.add, size: 16),
-                label: Text(
-                  'Add Report',
-                  style: GoogleFonts.roboto(fontSize: 12),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF2E86AB),
-                ),
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text('Add report'),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _buildReportsList(appointmentId),
         ],
       ),
@@ -844,7 +653,7 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(10),
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
             ),
           );
         }
@@ -852,14 +661,8 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                'No reports available',
-                style: GoogleFonts.roboto(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-              ),
+              padding: const EdgeInsets.all(16),
+              child: Text('No reports available', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
             ),
           );
         }
@@ -878,14 +681,13 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
     final createdAt = (report['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now();
     final hasAttachment = report['attachmentUrl'] != null;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -895,15 +697,10 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
               Expanded(
                 child: Text(
                   report['title']?.toString() ?? 'Medical Report',
-                  style: GoogleFonts.roboto(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1A237E),
-                  ),
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 ),
               ),
-              if (hasAttachment)
-                Icon(Icons.attach_file, size: 16, color: Colors.grey[600]),
+              if (hasAttachment) const Icon(Icons.attach_file_rounded, size: 16, color: AppColors.textSecondary),
               PopupMenuButton<String>(
                 onSelected: (value) {
                   switch (value) {
@@ -915,27 +712,24 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
                       break;
                   }
                 },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(value: 'delete', child: Text('Delete')),
                 ],
-                icon: Icon(Icons.more_vert, size: 16, color: Colors.grey[600]),
+                icon: const Icon(Icons.more_vert_rounded, size: 16, color: AppColors.textSecondary),
               ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
             DateFormat('MMM d, yyyy - h:mm a').format(createdAt),
-            style: GoogleFonts.roboto(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
           ),
           if (report['content']?.toString().isNotEmpty ?? false) ...[
             const SizedBox(height: 8),
             Text(
               report['content'],
-              style: GoogleFonts.roboto(fontSize: 13),
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -947,20 +741,17 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E86AB).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.file_present, size: 14, color: const Color(0xFF2E86AB)),
+                    const Icon(Icons.file_present_rounded, size: 14, color: AppColors.primary),
                     const SizedBox(width: 4),
                     Text(
                       report['attachmentName']?.toString() ?? 'Attachment',
-                      style: GoogleFonts.roboto(
-                        fontSize: 12,
-                        color: const Color(0xFF2E86AB),
-                      ),
+                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.primary),
                     ),
                   ],
                 ),
@@ -983,11 +774,8 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: Text(
-            'Add Medical Report',
-            style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Add medical report', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 18)),
           content: SizedBox(
             width: double.maxFinite,
             child: SingleChildScrollView(
@@ -998,57 +786,42 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(
-                      labelText: 'Report Title',
-                      border: const OutlineInputBorder(),
-                      errorText: titleController.text.trim().isEmpty && isUploading
-                          ? 'Title is required'
-                          : null,
+                      labelText: 'Report title',
+                      errorText: titleController.text.trim().isEmpty && isUploading ? 'Title is required' : null,
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 14),
                   TextField(
                     controller: contentController,
                     maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Report Content',
-                      border: OutlineInputBorder(),
-                      alignLabelWithHint: true,
-                    ),
+                    decoration: const InputDecoration(labelText: 'Report content', alignLabelWithHint: true),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
-                      ElevatedButton.icon(
+                      OutlinedButton.icon(
                         onPressed: isUploading
                             ? null
                             : () async {
-                          final result = await FilePicker.platform.pickFiles(
-                            type: FileType.custom,
-                            allowedExtensions: ['pdf'],
-                          );
-                          if (result != null) {
-                            setState(() {
-                              attachmentPath = result.files.single.path;
-                              attachmentName = result.files.single.name;
-                            });
-                            HapticFeedback.selectionClick();
-                          }
-                        },
-                        icon: const Icon(Icons.attach_file, size: 16),
+                                final result = await FilePicker.platform.pickFiles(
+                                  type: FileType.custom,
+                                  allowedExtensions: ['pdf'],
+                                );
+                                if (result != null) {
+                                  setState(() {
+                                    attachmentPath = result.files.single.path;
+                                    attachmentName = result.files.single.name;
+                                  });
+                                  HapticFeedback.selectionClick();
+                                }
+                              },
+                        icon: const Icon(Icons.attach_file_rounded, size: 16),
                         label: const Text('Attach PDF'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E86AB),
-                          foregroundColor: Colors.white,
-                        ),
                       ),
                       const SizedBox(width: 10),
                       if (attachmentName != null)
                         Expanded(
-                          child: Text(
-                            attachmentName!,
-                            style: GoogleFonts.roboto(fontSize: 12),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          child: Text(attachmentName!, style: GoogleFonts.inter(fontSize: 12), overflow: TextOverflow.ellipsis),
                         ),
                     ],
                   ),
@@ -1065,56 +838,52 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
               onPressed: isUploading
                   ? null
                   : () async {
-                if (titleController.text.trim().isEmpty) {
-                  setState(() => isUploading = true);
-                  _showSnackBar('Please enter a report title', isError: true);
-                  return;
-                }
+                      if (titleController.text.trim().isEmpty) {
+                        setState(() => isUploading = true);
+                        _showSnackBar('Please enter a report title', isError: true);
+                        return;
+                      }
 
-                setState(() => isUploading = true);
+                      setState(() => isUploading = true);
 
-                try {
-                  String? attachmentUrl;
+                      try {
+                        String? attachmentUrl;
 
-                  if (attachmentPath != null) {
-                    final file = File(attachmentPath!);
-                    final fileName = '${DateTime.now().millisecondsSinceEpoch}_$attachmentName';
-                    final ref = _storage.ref().child('reports/$appointmentId/$fileName');
-                    await ref.putFile(file);
-                    attachmentUrl = await ref.getDownloadURL();
-                  }
+                        if (attachmentPath != null) {
+                          final file = File(attachmentPath!);
+                          final fileName = '${DateTime.now().millisecondsSinceEpoch}_$attachmentName';
+                          final ref = _storage.ref().child('reports/$appointmentId/$fileName');
+                          await ref.putFile(file);
+                          attachmentUrl = await ref.getDownloadURL();
+                        }
 
-                  await _firestore
-                      .collection(Collections.appointments)
-                      .doc(appointmentId)
-                      .collection(Collections.reports)
-                      .add({
-                    'title': titleController.text.trim(),
-                    'content': contentController.text.trim(),
-                    'attachmentUrl': attachmentUrl,
-                    'attachmentName': attachmentName,
-                    'createdAt': Timestamp.now(),
-                    'updatedAt': Timestamp.now(),
-                    'doctorId': _doctorId,
-                  });
+                        await _firestore
+                            .collection(Collections.appointments)
+                            .doc(appointmentId)
+                            .collection(Collections.reports)
+                            .add({
+                          'title': titleController.text.trim(),
+                          'content': contentController.text.trim(),
+                          'attachmentUrl': attachmentUrl,
+                          'attachmentName': attachmentName,
+                          'createdAt': Timestamp.now(),
+                          'updatedAt': Timestamp.now(),
+                          'doctorId': _doctorId,
+                        });
 
-                  Navigator.pop(context);
-                  HapticFeedback.lightImpact();
-                  _showSnackBar('Report added successfully');
-                  await _sendReportNotification(appointmentId, titleController.text.trim());
-                } catch (e) {
-                  _showSnackBar('Error adding report: $e', isError: true);
-                } finally {
-                  setState(() => isUploading = false);
-                }
-              },
+                        if (context.mounted) Navigator.pop(context);
+                        HapticFeedback.lightImpact();
+                        _showSnackBar('Report added successfully');
+                        await _sendReportNotification(appointmentId, titleController.text.trim());
+                      } catch (e) {
+                        _showSnackBar('Error adding report: $e', isError: true);
+                      } finally {
+                        setState(() => isUploading = false);
+                      }
+                    },
               child: isUploading
-                  ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-                  : const Text('Add Report'),
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Add report'),
             ),
           ],
         ),
@@ -1135,11 +904,8 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: Text(
-            'Edit Medical Report',
-            style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Edit medical report', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 18)),
           content: SizedBox(
             width: double.maxFinite,
             child: SingleChildScrollView(
@@ -1150,41 +916,31 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(
-                      labelText: 'Report Title',
-                      border: const OutlineInputBorder(),
-                      errorText: titleController.text.trim().isEmpty && isUploading
-                          ? 'Title is required'
-                          : null,
+                      labelText: 'Report title',
+                      errorText: titleController.text.trim().isEmpty && isUploading ? 'Title is required' : null,
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 14),
                   TextField(
                     controller: contentController,
                     maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Report Content',
-                      border: OutlineInputBorder(),
-                      alignLabelWithHint: true,
-                    ),
+                    decoration: const InputDecoration(labelText: 'Report content', alignLabelWithHint: true),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 14),
                   if (currentAttachmentUrl != null && !removeCurrentAttachment) ...[
                     Row(
                       children: [
-                        Icon(Icons.attach_file, size: 16, color: Colors.grey[600]),
+                        const Icon(Icons.attach_file_rounded, size: 16, color: AppColors.textSecondary),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            'Current: ${attachmentName ?? 'Attachment'}',
-                            style: GoogleFonts.roboto(fontSize: 12),
-                          ),
+                          child: Text('Current: ${attachmentName ?? 'Attachment'}', style: GoogleFonts.inter(fontSize: 12)),
                         ),
                         IconButton(
                           onPressed: () {
                             setState(() => removeCurrentAttachment = true);
                             HapticFeedback.selectionClick();
                           },
-                          icon: const Icon(Icons.close, size: 16),
+                          icon: const Icon(Icons.close_rounded, size: 16),
                           tooltip: 'Remove attachment',
                         ),
                       ],
@@ -1193,38 +949,30 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
                   ],
                   Row(
                     children: [
-                      ElevatedButton.icon(
+                      OutlinedButton.icon(
                         onPressed: isUploading
                             ? null
                             : () async {
-                          final result = await FilePicker.platform.pickFiles(
-                            type: FileType.custom,
-                            allowedExtensions: ['pdf'],
-                          );
-                          if (result != null) {
-                            setState(() {
-                              attachmentPath = result.files.single.path;
-                              attachmentName = result.files.single.name;
-                              removeCurrentAttachment = true;
-                            });
-                            HapticFeedback.selectionClick();
-                          }
-                        },
-                        icon: const Icon(Icons.attach_file, size: 16),
+                                final result = await FilePicker.platform.pickFiles(
+                                  type: FileType.custom,
+                                  allowedExtensions: ['pdf'],
+                                );
+                                if (result != null) {
+                                  setState(() {
+                                    attachmentPath = result.files.single.path;
+                                    attachmentName = result.files.single.name;
+                                    removeCurrentAttachment = true;
+                                  });
+                                  HapticFeedback.selectionClick();
+                                }
+                              },
+                        icon: const Icon(Icons.attach_file_rounded, size: 16),
                         label: Text(currentAttachmentUrl != null ? 'Replace PDF' : 'Attach PDF'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E86AB),
-                          foregroundColor: Colors.white,
-                        ),
                       ),
                       const SizedBox(width: 10),
                       if (attachmentPath != null)
                         Expanded(
-                          child: Text(
-                            'New: $attachmentName',
-                            style: GoogleFonts.roboto(fontSize: 12),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          child: Text('New: $attachmentName', style: GoogleFonts.inter(fontSize: 12), overflow: TextOverflow.ellipsis),
                         ),
                     ],
                   ),
@@ -1241,61 +989,57 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
               onPressed: isUploading
                   ? null
                   : () async {
-                if (titleController.text.trim().isEmpty) {
-                  setState(() => isUploading = true);
-                  _showSnackBar('Please enter a report title', isError: true);
-                  return;
-                }
+                      if (titleController.text.trim().isEmpty) {
+                        setState(() => isUploading = true);
+                        _showSnackBar('Please enter a report title', isError: true);
+                        return;
+                      }
 
-                setState(() => isUploading = true);
+                      setState(() => isUploading = true);
 
-                try {
-                  String? newAttachmentUrl = currentAttachmentUrl;
-                  String? newAttachmentName = attachmentName;
+                      try {
+                        String? newAttachmentUrl = currentAttachmentUrl;
+                        String? newAttachmentName = attachmentName;
 
-                  if (removeCurrentAttachment) {
-                    newAttachmentUrl = null;
-                    newAttachmentName = null;
-                  }
+                        if (removeCurrentAttachment) {
+                          newAttachmentUrl = null;
+                          newAttachmentName = null;
+                        }
 
-                  if (attachmentPath != null) {
-                    final file = File(attachmentPath!);
-                    final fileName = '${DateTime.now().millisecondsSinceEpoch}_$attachmentName';
-                    final ref = _storage.ref().child('reports/$appointmentId/$fileName');
-                    await ref.putFile(file);
-                    newAttachmentUrl = await ref.getDownloadURL();
-                    newAttachmentName = attachmentName;
-                  }
+                        if (attachmentPath != null) {
+                          final file = File(attachmentPath!);
+                          final fileName = '${DateTime.now().millisecondsSinceEpoch}_$attachmentName';
+                          final ref = _storage.ref().child('reports/$appointmentId/$fileName');
+                          await ref.putFile(file);
+                          newAttachmentUrl = await ref.getDownloadURL();
+                          newAttachmentName = attachmentName;
+                        }
 
-                  await _firestore
-                      .collection(Collections.appointments)
-                      .doc(appointmentId)
-                      .collection(Collections.reports)
-                      .doc(reportId)
-                      .update({
-                    'title': titleController.text.trim(),
-                    'content': contentController.text.trim(),
-                    'attachmentUrl': newAttachmentUrl,
-                    'attachmentName': newAttachmentName,
-                    'updatedAt': Timestamp.now(),
-                  });
+                        await _firestore
+                            .collection(Collections.appointments)
+                            .doc(appointmentId)
+                            .collection(Collections.reports)
+                            .doc(reportId)
+                            .update({
+                          'title': titleController.text.trim(),
+                          'content': contentController.text.trim(),
+                          'attachmentUrl': newAttachmentUrl,
+                          'attachmentName': newAttachmentName,
+                          'updatedAt': Timestamp.now(),
+                        });
 
-                  Navigator.pop(context);
-                  HapticFeedback.lightImpact();
-                  _showSnackBar('Report updated successfully');
-                } catch (e) {
-                  _showSnackBar('Error updating report: $e', isError: true);
-                } finally {
-                  setState(() => isUploading = false);
-                }
-              },
+                        if (context.mounted) Navigator.pop(context);
+                        HapticFeedback.lightImpact();
+                        _showSnackBar('Report updated successfully');
+                      } catch (e) {
+                        _showSnackBar('Error updating report: $e', isError: true);
+                      } finally {
+                        setState(() => isUploading = false);
+                      }
+                    },
               child: isUploading
-                  ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-                  : const Text('Update Report'),
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Update report'),
             ),
           ],
         ),
@@ -1307,11 +1051,8 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: Text(
-          'Delete Report',
-          style: GoogleFonts.roboto(fontWeight: FontWeight.w600),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Delete report', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 18)),
         content: const Text('Are you sure you want to delete this report? This action cannot be undone.'),
         actions: [
           TextButton(
@@ -1328,17 +1069,14 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
                     .doc(reportId)
                     .delete();
 
-                Navigator.pop(context);
+                if (context.mounted) Navigator.pop(context);
                 HapticFeedback.lightImpact();
                 _showSnackBar('Report deleted successfully');
               } catch (e) {
                 _showSnackBar('Error deleting report: $e', isError: true);
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -1389,9 +1127,7 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
     if (filterDate != null) {
       final startOfDay = DateTime(filterDate!.year, filterDate!.month, filterDate!.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
-      query = query
-          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .where('date', isLessThan: Timestamp.fromDate(endOfDay));
+      query = query.where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay)).where('date', isLessThan: Timestamp.fromDate(endOfDay));
     }
 
     return query.snapshots();
@@ -1407,9 +1143,7 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
     if (filterDate != null) {
       final startOfDay = DateTime(filterDate!.year, filterDate!.month, filterDate!.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
-      query = query
-          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .where('date', isLessThan: Timestamp.fromDate(endOfDay));
+      query = query.where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay)).where('date', isLessThan: Timestamp.fromDate(endOfDay));
     }
 
     return query.snapshots();
@@ -1417,7 +1151,6 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
 
   void _updateAppointmentStatus(String appointmentId, String newStatus) async {
     try {
-      // Get appointment data first to access userId
       final appointmentDoc = await _firestore.collection(Collections.appointments).doc(appointmentId).get();
       if (!appointmentDoc.exists) {
         _showSnackBar('Appointment not found', isError: true);
@@ -1426,15 +1159,13 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
 
       final appointmentData = appointmentDoc.data()!;
       final userId = appointmentData['userId'];
-      final patientName = await _getPatientName(userId);
+      await _getPatientName(userId);
 
-      // Update appointment status
       await _firestore.collection(Collections.appointments).doc(appointmentId).update({
         'status': newStatus,
         'updatedAt': Timestamp.now(),
       });
 
-      // Send notification to patient
       String notificationTitle = 'Appointment Update';
       String notificationBody = '';
 
@@ -1460,9 +1191,9 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
       _showSnackBar('Error updating appointment: $e', isError: true);
     }
   }
+
   Future<void> _sendNotification(String userId, String title, String body) async {
     try {
-      // Get user's FCM token
       final userDoc = await _firestore.collection(Collections.users).doc(userId).get();
       if (!userDoc.exists) {
         debugPrint('User document not found for ID: $userId');
@@ -1477,7 +1208,6 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
         return;
       }
 
-      // Store notification in Firestore for the Cloud Function to process
       await _firestore.collection(Collections.notifications).add({
         'to': fcmToken,
         'title': title,
@@ -1486,19 +1216,14 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
           'type': 'appointment_update',
           'userId': userId,
           'doctorId': _doctorId,
-          'timestamp': DateTime.now().millisecondsSinceEpoch.toString(), // Add timestamp
+          'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
         },
         'timestamp': FieldValue.serverTimestamp(),
         'processed': false,
-        'retryCount': 0, // Add retry tracking
+        'retryCount': 0,
       });
 
-      // Also store in user's notification subcollection for in-app notifications
-      await _firestore
-          .collection(Collections.users)
-          .doc(userId)
-          .collection(Collections.notifications)
-          .add({
+      await _firestore.collection(Collections.users).doc(userId).collection(Collections.notifications).add({
         'title': title,
         'body': body,
         'type': 'appointment_update',
@@ -1513,7 +1238,6 @@ class _DoctorAppointmentScreenState extends State<DoctorAppointmentScreen>
     }
   }
 
-  // ADD THIS NEW METHOD (for report notifications - optional)
   Future<void> _sendReportNotification(String appointmentId, String reportTitle) async {
     try {
       final appointmentDoc = await _firestore.collection(Collections.appointments).doc(appointmentId).get();

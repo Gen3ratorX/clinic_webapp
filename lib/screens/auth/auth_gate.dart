@@ -140,8 +140,11 @@ class _AuthGateState extends State<AuthGate> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.primary),
+          return const Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
           );
         }
         if (!snapshot.hasData) {
@@ -151,25 +154,31 @@ class _AuthGateState extends State<AuthGate> {
           future: _getUserRole(snapshot.data!.uid),
           builder: (context, roleSnapshot) {
             if (roleSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
+              return const Scaffold(
+                backgroundColor: AppColors.background,
+                body: Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
               );
             }
             if (roleSnapshot.hasError || !roleSnapshot.hasData) {
               debugPrint('Error or no role data: ${roleSnapshot.error}');
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Error loading user role. Please try again.',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                    TextButton(
-                      onPressed: () => setState(() {}),
-                      child: const Text('Retry'),
-                    ),
-                  ],
+              return Scaffold(
+                backgroundColor: AppColors.background,
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Error loading user role. Please try again.',
+                        style: TextStyle(color: AppColors.error),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() {}),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }
